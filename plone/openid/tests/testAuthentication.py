@@ -1,5 +1,6 @@
 import unittest
 
+
 class TestOpenIdAuthentication(unittest.TestCase):
     identity = "http://plone.myopenid.com"
 
@@ -10,22 +11,20 @@ class TestOpenIdAuthentication(unittest.TestCase):
         pas=MockPAS()
         return plugin.__of__(pas)
 
-
     def buildServerResponse(self):
         credentials={}
-        for field in [ "nonce", "openid.assoc_handle", "openid.return_to",
-                        "openid.signed", "openid.sig",
-                        "openid.invalidate_handle", "openid.mode"]:
+        for field in ["nonce", "openid.assoc_handle", "openid.return_to",
+                      "openid.signed", "openid.sig",
+                      "openid.invalidate_handle", "openid.mode"]:
             credentials[field]=field
         credentials["openid.identity"]=self.identity
         credentials["openid.source"]="server"
-        
+
         # this isn't part of the server response, but is added to the
         # credentials by PAS
         credentials["extractor"] = "openid"
 
         return credentials
-
 
     def testEmptyAuthentication(self):
         """Test if we do not invent an identity out of thin air.
@@ -33,7 +32,6 @@ class TestOpenIdAuthentication(unittest.TestCase):
         plugin=self.createPlugin()
         creds=plugin.authenticateCredentials({})
         self.assertEqual(creds, None)
-
 
     def testEmptyStringIdentityAuthentication(self):
         """Test coverage for bug #7176, where an 
@@ -46,15 +44,12 @@ class TestOpenIdAuthentication(unittest.TestCase):
         creds=plugin.authenticateCredentials(credentials)
         self.assertEqual(creds, None)
 
-
     def testUnknownOpenIdSource(self):
         """Test if an incorrect source does not produce unexpected exceptions.
         """
         plugin=self.createPlugin()
         creds=plugin.authenticateCredentials({"openid.source" : "x"})
         self.assertEqual(creds, None)
-
-
 
     def testIncompleteServerAuthentication(self):
         """Test authentication of OpenID server responses.
