@@ -1,7 +1,5 @@
 from Testing import ZopeTestCase
 from plone.session.tests.sessioncase import PloneSessionTestCase
-from Testing.ZopeTestCase.placeless import setUp, tearDown
-from Testing.ZopeTestCase.placeless import zcml
 
 from plone.openid.plugins.oid import OpenIdPlugin
 from plone.openid.tests.consumer import PatchPlugin
