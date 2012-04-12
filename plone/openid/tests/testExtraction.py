@@ -33,10 +33,10 @@ class TestOpenIdExtraction(unittest.TestCase):
 
     def testEmptyStringIdentityExtraction(self):
         """Test coverage for bug #7176. In the case where "" (i.e an empty
-           string) is passed in as the identity via the request, 
-           we essentially want to ensure that a Redirect isn't raised, which 
+           string) is passed in as the identity via the request,
+           we essentially want to ensure that a Redirect isn't raised, which
            would signify that an IOpenIdExtractionPlugin challenge was initialized.
-           
+
            This test demonstrates our openid plugin's extractCredentials eliminates
            credentials that aren't in the openid.* namespace.
         """
@@ -45,7 +45,7 @@ class TestOpenIdExtraction(unittest.TestCase):
         plugin.REQUEST.form["__ac_identity_url"]=""
         creds=plugin.extractCredentials(plugin.REQUEST)
         self.failIf(creds.has_key("__ac_identity_url"))
-        
+
 
     def testRedirect(self):
         """Test if a redirect is generated for a login attempt.
@@ -89,7 +89,28 @@ class TestOpenIdExtraction(unittest.TestCase):
         self.assertRaises(Redirect,
                 plugin.extractCredentials, plugin.REQUEST)
 
+    def testUnallowedOpenIDProviderExtraction(self):
+        """Check that redirect is not raised when we try to login with
+        unallowed openid provider url.
+        """
+        plugin=self.createPlugin()
+        setattr(plugin, 'allowed_openid_providers', [self.identity])
+        plugin.REQUEST.form.update(self.server_response)
+        plugin.REQUEST.form["__ac_identity_url"]="http://plone.mywrongopenid.com"
 
+        creds=plugin.extractCredentials(plugin.REQUEST)
+        self.failIf(creds.has_key("__ac_identity_url"))
+
+    def testAllowedOpenIDProviderExtraction(self):
+        """Check that we're redirected when we try to login with allowed
+        openid provider url set in both openid properties and as login url.
+        """
+        plugin=self.createPlugin()
+        setattr(plugin, 'allowed_openid_providers', [self.identity])
+        plugin.REQUEST.form.update(self.server_response)
+        plugin.REQUEST.form["__ac_identity_url"]=self.identity
+        self.assertRaises(Redirect,
+                plugin.extractCredentials, plugin.REQUEST)
 
 def test_suite():
     from unittest import TestSuite, makeSuite
