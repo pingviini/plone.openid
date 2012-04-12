@@ -13,10 +13,12 @@ from openid.yadis.discover import DiscoveryFailure
 from openid.consumer.consumer import Consumer, SUCCESS
 import logging
 
-manage_addOpenIdPlugin = PageTemplateFile("../www/openidAdd", globals(), 
-                __name__="manage_addOpenIdPlugin")
+
+manage_addOpenIdPlugin = PageTemplateFile("../www/openidAdd", globals(),
+                                          __name__="manage_addOpenIdPlugin")
 
 logger = logging.getLogger("PluggableAuthService")
+
 
 def addOpenIdPlugin(self, id, title='', REQUEST=None):
     """Add a OpenID plugin to a Pluggable Authentication Service.
@@ -34,25 +36,29 @@ class OpenIdPlugin(BasePlugin):
     """OpenID authentication plugin.
     """
 
+    _properties = ({'id'    : 'allowed_openid_providers',
+                    'label' : 'Allowed openid providers',
+                    'type'  : 'lines',
+                    'mode'  : 'w'},
+                  )
+
     meta_type = "OpenID plugin"
     security = ClassSecurityInfo()
 
-    def __init__(self, id, title=None):
+    def __init__(self, id, title=None, allowed_openid_providers=[]):
         self._setId(id)
         self.title=title
+        self.allowed_openid_providers=allowed_openid_providers
         self.store=ZopeStore()
-
 
     def getTrustRoot(self):
         pas=self._getPAS()
         site=aq_parent(pas)
         return site.absolute_url()
 
-
     def getConsumer(self):
         session=self.REQUEST["SESSION"]
         return Consumer(session, self.store)
-
 
     def extractOpenIdServerResponse(self, request, creds):
         """Process incoming redirect from an OpenId server.
@@ -61,7 +67,6 @@ class OpenIdPlugin(BasePlugin):
         form parameters. If it is found the creds parameter is
         cleared and filled with the found credentials.
         """
-
         mode=request.form.get("openid.mode", None)
         if mode=="id_res":
             # id_res means 'positive assertion' in OpenID, more commonly
@@ -77,7 +82,6 @@ class OpenIdPlugin(BasePlugin):
             # which means the user did not authorize correctly.
             pass
 
-
     # IOpenIdExtractionPlugin implementation
     def initiateChallenge(self, identity_url, return_to=None):
         consumer=self.getConsumer()
@@ -91,7 +95,7 @@ class OpenIdPlugin(BasePlugin):
             logger.info("openid consumer error for identity %s: %s",
                     identity_url, e.why)
             pass
-            
+
         if return_to is None:
             return_to=self.REQUEST.form.get("came_from", None)
         if not return_to or 'janrain_nonce' in return_to:
@@ -113,7 +117,6 @@ class OpenIdPlugin(BasePlugin):
         transaction.commit()
         raise Redirect, url
 
-
     # IExtractionPlugin implementation
     def extractCredentials(self, request):
         """This method performs the PAS credential extraction.
@@ -123,13 +126,16 @@ class OpenIdPlugin(BasePlugin):
         """
         creds={}
         identity=request.form.get("__ac_identity_url", None)
-        if identity is not None and identity != "":
+
+        allowed_openid_providers = getattr(self, 'allowed_openid_providers', None)
+
+        if identity is not None and identity != "" and\
+            (not allowed_openid_providers or identity in allowed_openid_providers):
             self.initiateChallenge(identity)
             return creds
-            
+
         self.extractOpenIdServerResponse(request, creds)
         return creds
-
 
     # IAuthenticationPlugin implementation
     def authenticateCredentials(self, credentials):
@@ -138,15 +144,15 @@ class OpenIdPlugin(BasePlugin):
 
         if credentials["openid.source"]=="server":
             consumer=self.getConsumer()
-            
+
             # remove the extractor key that PAS adds to the credentials,
             # or python-openid will complain
             query = credentials.copy()
             del query['extractor']
-            
+
             result=consumer.complete(query, self.REQUEST.ACTUAL_URL)
             identity=result.identity_url
-            
+
             if result.status==SUCCESS:
                 self._getPAS().updateCredentials(self.REQUEST,
                         self.REQUEST.RESPONSE, identity, "")
@@ -156,7 +162,6 @@ class OpenIdPlugin(BasePlugin):
                                 identity, result.message)
 
         return None
-
 
     # IUserEnumerationPlugin implementation
     def enumerateUsers(self, id=None, login=None, exact_match=False,
@@ -180,15 +185,12 @@ class OpenIdPlugin(BasePlugin):
         if not (key.startswith("http:") or key.startswith("https:")):
             return None
 
-        return [ {
-                    "id" : key,
-                    "login" : key,
-                    "pluginid" : self.getId(),
-                } ]
-
+        return [{
+                   "id": key,
+                   "login": key,
+                   "pluginid": self.getId(),
+                }]
 
 
 classImplements(OpenIdPlugin, IOpenIdExtractionPlugin, IAuthenticationPlugin,
                 IUserEnumerationPlugin)
-
-
