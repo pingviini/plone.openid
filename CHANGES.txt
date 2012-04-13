@@ -12,6 +12,10 @@ Changelog
 - Add MANIFEST.in.
   [WouterVH]
 
+- Added allowed_openid_providers property to allow administrators to whitelist
+  OpenID providers.
+  [pingviini]
+
 
 2.0 - 2010-07-18
 ----------------

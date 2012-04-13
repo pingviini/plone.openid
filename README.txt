@@ -11,7 +11,9 @@ Using this package everyone with an OpenID authentity will be able to
 login on your Zope site. OpenID accounts are not given any extra roles
 beyond the standard Authenticated role. This allows you to make a distinction
 between people that have explicitly signed up to your site and people
-who are unknown but have succesfully verified their identity.
+who are unknown but have succesfully verified their identity. It is also
+possible to whitelist certain OpenID providers through openid plugin properties
+to allow login just from the specified OpenID providers.
 
 .. _Zope: http://www.zope.org/
 .. _OpenID: http://www.openidenabled.com/
