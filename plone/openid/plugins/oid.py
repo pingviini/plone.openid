@@ -23,7 +23,7 @@ logger = logging.getLogger("PluggableAuthService")
 def addOpenIdPlugin(self, id, title='', REQUEST=None):
     """Add a OpenID plugin to a Pluggable Authentication Service.
     """
-    p=OpenIdPlugin(id, title)
+    p = OpenIdPlugin(id, title)
     self._setObject(p.getId(), p)
 
     if REQUEST is not None:
@@ -36,10 +36,10 @@ class OpenIdPlugin(BasePlugin):
     """OpenID authentication plugin.
     """
 
-    _properties = ({'id'    : 'allowed_openid_providers',
-                    'label' : 'Allowed openid providers',
-                    'type'  : 'lines',
-                    'mode'  : 'w'},
+    _properties = ({'id': 'allowed_openid_providers',
+                    'label': 'Allowed openid providers',
+                    'type': 'lines',
+                    'mode': 'w'},
                   )
 
     meta_type = "OpenID plugin"
@@ -47,17 +47,17 @@ class OpenIdPlugin(BasePlugin):
 
     def __init__(self, id, title=None, allowed_openid_providers=[]):
         self._setId(id)
-        self.title=title
-        self.allowed_openid_providers=allowed_openid_providers
-        self.store=ZopeStore()
+        self.title = title
+        self.allowed_openid_providers = allowed_openid_providers
+        self.store = ZopeStore()
 
     def getTrustRoot(self):
-        pas=self._getPAS()
-        site=aq_parent(pas)
+        pas = self._getPAS()
+        site = aq_parent(pas)
         return site.absolute_url()
 
     def getConsumer(self):
-        session=self.REQUEST["SESSION"]
+        session = self.REQUEST["SESSION"]
         return Consumer(session, self.store)
 
     def extractOpenIdServerResponse(self, request, creds):
@@ -67,26 +67,26 @@ class OpenIdPlugin(BasePlugin):
         form parameters. If it is found the creds parameter is
         cleared and filled with the found credentials.
         """
-        mode=request.form.get("openid.mode", None)
-        if mode=="id_res":
+        mode = request.form.get("openid.mode", None)
+        if mode == "id_res":
             # id_res means 'positive assertion' in OpenID, more commonly
             # described as 'positive authentication'
             creds.clear()
-            creds["openid.source"]="server"
-            creds["janrain_nonce"]=request.form.get("janrain_nonce")
-            for (field,value) in request.form.iteritems():
+            creds["openid.source"] = "server"
+            creds["janrain_nonce"] = request.form.get("janrain_nonce")
+            for (field, value) in request.form.iteritems():
                 if field.startswith("openid.") or field.startswith("openid1_"):
-                    creds[field]=request.form[field]
-        elif mode=="cancel":
+                    creds[field] = request.form[field]
+        elif mode == "cancel":
             # cancel is a negative assertion in the OpenID protocol,
             # which means the user did not authorize correctly.
             pass
 
     # IOpenIdExtractionPlugin implementation
     def initiateChallenge(self, identity_url, return_to=None):
-        consumer=self.getConsumer()
+        consumer = self.getConsumer()
         try:
-            auth_request=consumer.begin(identity_url)
+            auth_request = consumer.begin(identity_url)
         except DiscoveryFailure, e:
             logger.info("openid consumer discovery error for identity %s: %s",
                     identity_url, e[0])
@@ -97,15 +97,16 @@ class OpenIdPlugin(BasePlugin):
             pass
 
         if return_to is None:
-            return_to=self.REQUEST.form.get("came_from", None)
+            return_to = self.REQUEST.form.get("came_from", None)
         if not return_to or 'janrain_nonce' in return_to:
             # The conditional on janrain_nonce here is to handle the case where
             # the user logs in, logs out, and logs in again in succession.  We
-            # were ending up with duplicate open ID variables on the second response
-            # from the OpenID provider, which was breaking the second login.
-            return_to=self.getTrustRoot()
+            # were ending up with duplicate open ID variables on the second
+            # response from the OpenID provider, which was breaking the second
+            # login.
+            return_to = self.getTrustRoot()
 
-        url=auth_request.redirectURL(self.getTrustRoot(), return_to)
+        url = auth_request.redirectURL(self.getTrustRoot(), return_to)
 
         # There is evilness here: we can not use a normal RESPONSE.redirect
         # since further processing of the request will happily overwrite
@@ -115,7 +116,7 @@ class OpenIdPlugin(BasePlugin):
         # get things working.
         # XXX this also f**ks up ZopeTestCase
         transaction.commit()
-        raise Redirect, url
+        raise Redirect(url)
 
     # IExtractionPlugin implementation
     def extractCredentials(self, request):
@@ -124,13 +125,15 @@ class OpenIdPlugin(BasePlugin):
         It takes either the zope cookie and extracts openid credentials
         from it, or a redirect from an OpenID server.
         """
-        creds={}
-        identity=request.form.get("__ac_identity_url", None)
+        creds = {}
+        identity = request.form.get("__ac_identity_url", None)
 
-        allowed_openid_providers = getattr(self, 'allowed_openid_providers', None)
+        allowed_openid_providers = getattr(self, 'allowed_openid_providers',
+                                           None)
 
         if identity is not None and identity != "" and\
-            (not allowed_openid_providers or identity in allowed_openid_providers):
+            (not allowed_openid_providers or identity in \
+             allowed_openid_providers):
             self.initiateChallenge(identity)
             return creds
 
@@ -142,18 +145,18 @@ class OpenIdPlugin(BasePlugin):
         if not credentials.has_key("openid.source"):
             return None
 
-        if credentials["openid.source"]=="server":
-            consumer=self.getConsumer()
+        if credentials["openid.source"] == "server":
+            consumer = self.getConsumer()
 
             # remove the extractor key that PAS adds to the credentials,
             # or python-openid will complain
             query = credentials.copy()
             del query['extractor']
 
-            result=consumer.complete(query, self.REQUEST.ACTUAL_URL)
-            identity=result.identity_url
+            result = consumer.complete(query, self.REQUEST.ACTUAL_URL)
+            identity = result.identity_url
 
-            if result.status==SUCCESS:
+            if result.status == SUCCESS:
                 self._getPAS().updateCredentials(self.REQUEST,
                         self.REQUEST.RESPONSE, identity, "")
                 return (identity, identity)
@@ -174,13 +177,13 @@ class OpenIdPlugin(BasePlugin):
         We do this by checking for the exact kind of call the PAS getUserById
         implementation makes
         """
-        if id and login and id!=login:
+        if id and login and id != login:
             return None
 
         if (id and not exact_match) or kw:
             return None
 
-        key=id and id or login
+        key = id and id or login
 
         if not (key.startswith("http:") or key.startswith("https:")):
             return None
