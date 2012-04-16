@@ -1,9 +1,9 @@
 try:
     from openid.yadis import etxrd
-    HAS_OPENID=True
+    HAS_OPENID = True
 except:
-    HAS_OPENID=False
+    HAS_OPENID = False
 
 import socket
-HAS_SSL=hasattr(socket, "ssl")
+HAS_SSL = hasattr(socket, "ssl")
 del socket

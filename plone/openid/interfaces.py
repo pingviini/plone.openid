@@ -1,5 +1,6 @@
 from Products.PluggableAuthService.interfaces.plugins import IExtractionPlugin
 
+
 class IOpenIdExtractionPlugin(IExtractionPlugin):
     """Extract OpenID credential information from a request.
     """
@@ -7,7 +8,6 @@ class IOpenIdExtractionPlugin(IExtractionPlugin):
     def initiateAuthentication(identity_url, return_to=None):
         """Initiate the OpenID authentication.
         """
-
 
     def extractCredentials(request):
         """ request -> { 'openid.identity' : identity,
@@ -18,4 +18,3 @@ class IOpenIdExtractionPlugin(IExtractionPlugin):
                          'openid.invalidate_handle' : invalidate_handle,
                         }
         """
-
