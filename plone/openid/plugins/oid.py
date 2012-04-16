@@ -142,7 +142,7 @@ class OpenIdPlugin(BasePlugin):
 
     # IAuthenticationPlugin implementation
     def authenticateCredentials(self, credentials):
-        if not credentials.has_key("openid.source"):
+        if not "openid.source" in credentials:
             return None
 
         if credentials["openid.source"] == "server":
